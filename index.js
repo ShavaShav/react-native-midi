@@ -1,7 +1,11 @@
-import { NativeModules } from 'react-native';
+import { NativeEventEmitter, NativeModules } from 'react-native';
 
 const { Midi } = NativeModules;
 
-Midi.jsWrappedFunction = (myArg) => { return "JS STRING!! arg: " + myArg  };
+const eventEmitter = new NativeEventEmitter(Midi);
+
+Midi.on = (event, callback) => {
+  eventEmitter.addListener(event, callback)
+}
 
 export default Midi;
