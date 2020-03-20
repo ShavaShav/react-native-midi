@@ -6,7 +6,6 @@ import android.os.Build;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -17,26 +16,18 @@ import jp.kshoji.driver.midi.device.MidiOutputDevice;
 import jp.kshoji.driver.midi.util.UsbMidiDriver;
 
 public class MidiDriverUSB extends UsbMidiDriver {
-    private final ReactApplicationContext mContext;
+    private final MidiEventEmitter mEmitter;
     private final Map<Integer, UsbDevice> mDevices;
 
-    public MidiDriverUSB(ReactApplicationContext context) {
+    public MidiDriverUSB(ReactApplicationContext context, MidiEventEmitter emitter) {
         super(context);
-        mContext = context;
+        mEmitter = emitter;
         mDevices = new HashMap<Integer, UsbDevice>();
     }
 
     public Map<Integer, UsbDevice> getDevices() {
         return mDevices;
     };
-
-    private void sendEvent(String eventName, WritableMap params) {
-        if (!mContext.hasActiveCatalystInstance())
-            return;
-        
-        mContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit(eventName, params);
-    }
 
     private WritableMap convertMidiInputDeviceToMap(MidiInputDevice midiInputDevice) {
         WritableMap params = Arguments.createMap();
@@ -90,7 +81,7 @@ public class MidiDriverUSB extends UsbMidiDriver {
         synchronized (mDevices) {
             mDevices.put(usbDevice.getDeviceId(), usbDevice);
         }
-        sendEvent(MidiModule.DEVICE_ATTACHED, addUSBDeviceToParams(usbDevice, Arguments.createMap()));
+        mEmitter.emit(MidiEvent.DEVICE_ATTACHED, addUSBDeviceToParams(usbDevice, Arguments.createMap()));
     }
 
     @Override
@@ -98,55 +89,59 @@ public class MidiDriverUSB extends UsbMidiDriver {
         synchronized (mDevices) {
             mDevices.remove(usbDevice.getDeviceId());
         }
-        sendEvent(MidiModule.DEVICE_DETACHED, addUSBDeviceToParams(usbDevice, Arguments.createMap()));
+        mEmitter.emit(MidiEvent.DEVICE_DETACHED, addUSBDeviceToParams(usbDevice, Arguments.createMap()));
     }
 
     @Override
     public void onMidiInputDeviceAttached(MidiInputDevice midiInputDevice) {
-        sendEvent(MidiModule.INPUT_DEVICE_ATTACHED, convertMidiInputDeviceToMap(midiInputDevice));
+        mEmitter.emit(MidiEvent.INPUT_DEVICE_ATTACHED, convertMidiInputDeviceToMap(midiInputDevice));
     }
 
     @Override
     public void onMidiOutputDeviceAttached(MidiOutputDevice midiOutputDevice) {
-        sendEvent(MidiModule.OUTPUT_DEVICE_ATTACHED, convertMidiOutputDeviceToMap(midiOutputDevice));
+        mEmitter.emit(MidiEvent.OUTPUT_DEVICE_ATTACHED, convertMidiOutputDeviceToMap(midiOutputDevice));
     }
 
     @Override
     public void onMidiInputDeviceDetached(MidiInputDevice midiInputDevice) {
-        sendEvent(MidiModule.INPUT_DEVICE_DETACHED, convertMidiInputDeviceToMap(midiInputDevice));
+        mEmitter.emit(MidiEvent.INPUT_DEVICE_DETACHED, convertMidiInputDeviceToMap(midiInputDevice));
     }
 
     @Override
     public void onMidiOutputDeviceDetached(MidiOutputDevice midiOutputDevice) {
-        sendEvent(MidiModule.OUTPUT_DEVICE_DETACHED, convertMidiOutputDeviceToMap(midiOutputDevice));
+        mEmitter.emit(MidiEvent.OUTPUT_DEVICE_DETACHED, convertMidiOutputDeviceToMap(midiOutputDevice));
     }
 
     @Override
     public void onMidiMiscellaneousFunctionCodes(MidiInputDevice midiInputDevice, int cable, int byte1, int byte2, int byte3) {
+        // Misc function codes are received ALOT. Bail out extra early if we're not listening (to prevent unnecessary array building)
+        if (!mEmitter.isListening(MidiEvent.MISC_FUNCTION_CODES))
+            return;
+
         final WritableMap params = getMidiEventMap(midiInputDevice, cable);
         params.putArray("codes", Arguments.fromList(Arrays.asList(byte1, byte2, byte3)));
-        sendEvent(MidiModule.MISC_FUNCTION_CODES, params);
+        mEmitter.emit(MidiEvent.MISC_FUNCTION_CODES, params);
     }
 
     @Override
     public void onMidiCableEvents(MidiInputDevice midiInputDevice, int cable, int byte1, int byte2, int byte3) {
         final WritableMap params = getMidiEventMap(midiInputDevice, cable);
         params.putArray("events", Arguments.fromList(Arrays.asList(byte1, byte2, byte3)));
-        sendEvent(MidiModule.CABLE_EVENTS, params);
+        mEmitter.emit(MidiEvent.CABLE_EVENTS, params);
     }
 
     @Override
     public void onMidiSystemCommonMessage(MidiInputDevice midiInputDevice, int cable, byte[] bytes) {
         final WritableMap params = getMidiEventMap(midiInputDevice, cable);
         params.putString("message", new String(bytes)); // pass bytes as string
-        sendEvent(MidiModule.SYSTEM_COMMON_MESSAGE, params);
+        mEmitter.emit(MidiEvent.SYSTEM_COMMON_MESSAGE, params);
     }
 
     @Override
     public void onMidiSystemExclusive(MidiInputDevice midiInputDevice, int cable, byte[] systemExclusive) {
         final WritableMap params = getMidiEventMap(midiInputDevice, cable);
         params.putString("message", new String(systemExclusive)); // pass bytes as string
-        sendEvent(MidiModule.SYSTEM_EXCLUSIVE, params);
+        mEmitter.emit(MidiEvent.SYSTEM_EXCLUSIVE, params);
     }
 
     @Override
@@ -155,7 +150,7 @@ public class MidiDriverUSB extends UsbMidiDriver {
         params.putInt("channel", channel);
         params.putInt("note", note);
         params.putInt("velocity", velocity);
-        sendEvent(MidiModule.NOTE_OFF, params);
+        mEmitter.emit(MidiEvent.NOTE_OFF, params);
     }
 
     @Override
@@ -164,7 +159,7 @@ public class MidiDriverUSB extends UsbMidiDriver {
         params.putInt("channel", channel);
         params.putInt("note", note);
         params.putInt("velocity", velocity);
-        sendEvent(MidiModule.NOTE_ON, params);
+        mEmitter.emit(MidiEvent.NOTE_ON, params);
     }
 
     @Override
@@ -173,7 +168,7 @@ public class MidiDriverUSB extends UsbMidiDriver {
         params.putInt("channel", channel);
         params.putInt("note", note);
         params.putInt("pressure", pressure);
-        sendEvent(MidiModule.POLYPHONIC_AFTERTOUCH, params);
+        mEmitter.emit(MidiEvent.POLYPHONIC_AFTERTOUCH, params);
     }
 
     @Override
@@ -182,7 +177,7 @@ public class MidiDriverUSB extends UsbMidiDriver {
         params.putInt("channel", channel);
         params.putInt("function", function);
         params.putInt("value", value);
-        sendEvent(MidiModule.CONTROL_CHANGE, params);
+        mEmitter.emit(MidiEvent.CONTROL_CHANGE, params);
     }
 
     @Override
@@ -190,7 +185,7 @@ public class MidiDriverUSB extends UsbMidiDriver {
         final WritableMap params = getMidiEventMap(midiInputDevice, cable);
         params.putInt("channel", channel);
         params.putInt("program", program);
-        sendEvent(MidiModule.PROGRAM_CHANGE, params);
+        mEmitter.emit(MidiEvent.PROGRAM_CHANGE, params);
     }
 
     @Override
@@ -198,7 +193,7 @@ public class MidiDriverUSB extends UsbMidiDriver {
         final WritableMap params = getMidiEventMap(midiInputDevice, cable);
         params.putInt("channel", channel);
         params.putInt("pressure", pressure);
-        sendEvent(MidiModule.CHANNEL_AFTERTOUCH, params);
+        mEmitter.emit(MidiEvent.CHANNEL_AFTERTOUCH, params);
     }
 
     @Override
@@ -206,69 +201,69 @@ public class MidiDriverUSB extends UsbMidiDriver {
         final WritableMap params = getMidiEventMap(midiInputDevice, cable);
         params.putInt("channel", channel);
         params.putInt("amount", amount);
-        sendEvent(MidiModule.PITCH_WHEEL, params);
+        mEmitter.emit(MidiEvent.PITCH_WHEEL, params);
     }
 
     @Override
     public void onMidiSingleByte(MidiInputDevice midiInputDevice, int cable, int byte1) {
         final WritableMap params = getMidiEventMap(midiInputDevice, cable);
         params.putInt("byte", byte1);
-        sendEvent(MidiModule.SINGLE_BYTE, params);
+        mEmitter.emit(MidiEvent.SINGLE_BYTE, params);
     }
 
     @Override
     public void onMidiTimeCodeQuarterFrame(MidiInputDevice midiInputDevice, int cable, int timing) {
         final WritableMap params = getMidiEventMap(midiInputDevice, cable);
         params.putInt("timing", timing);
-        sendEvent(MidiModule.TIME_CODE_QUARTER_FRAME, params);
+        mEmitter.emit(MidiEvent.TIME_CODE_QUARTER_FRAME, params);
     }
 
     @Override
     public void onMidiSongSelect(MidiInputDevice midiInputDevice, int cable, int song) {
         final WritableMap params = getMidiEventMap(midiInputDevice, cable);
         params.putInt("song", song);
-        sendEvent(MidiModule.SONG_SELECT, params);
+        mEmitter.emit(MidiEvent.SONG_SELECT, params);
     }
 
     @Override
     public void onMidiSongPositionPointer(MidiInputDevice midiInputDevice, int cable, int position) {
         final WritableMap params = getMidiEventMap(midiInputDevice, cable);
         params.putInt("position", position);
-        sendEvent(MidiModule.SONG_POSITION_POINTER, params);
+        mEmitter.emit(MidiEvent.SONG_POSITION_POINTER, params);
     }
 
     @Override
     public void onMidiTuneRequest(MidiInputDevice midiInputDevice, int cable) {
-        sendEvent(MidiModule.TUNE_REQUEST, getMidiEventMap(midiInputDevice, cable));
+        mEmitter.emit(MidiEvent.TUNE_REQUEST, getMidiEventMap(midiInputDevice, cable));
     }
 
     @Override
     public void onMidiTimingClock(MidiInputDevice midiInputDevice, int cable) {
-        sendEvent(MidiModule.TIMING_CLOCK, getMidiEventMap(midiInputDevice, cable));
+        mEmitter.emit(MidiEvent.TIMING_CLOCK, getMidiEventMap(midiInputDevice, cable));
     }
 
     @Override
     public void onMidiStart(MidiInputDevice midiInputDevice, int cable) {
-        sendEvent(MidiModule.START, getMidiEventMap(midiInputDevice, cable));
+        mEmitter.emit(MidiEvent.START, getMidiEventMap(midiInputDevice, cable));
     }
 
     @Override
     public void onMidiContinue(MidiInputDevice midiInputDevice, int cable) {
-        sendEvent(MidiModule.CONTINUE, getMidiEventMap(midiInputDevice, cable));
+        mEmitter.emit(MidiEvent.CONTINUE, getMidiEventMap(midiInputDevice, cable));
     }
 
     @Override
     public void onMidiStop(MidiInputDevice midiInputDevice, int cable) {
-        sendEvent(MidiModule.STOP, getMidiEventMap(midiInputDevice, cable));
+        mEmitter.emit(MidiEvent.STOP, getMidiEventMap(midiInputDevice, cable));
     }
 
     @Override
     public void onMidiActiveSensing(MidiInputDevice midiInputDevice, int cable) {
-        sendEvent(MidiModule.ACTIVE_SENSING, getMidiEventMap(midiInputDevice, cable));
+        mEmitter.emit(MidiEvent.ACTIVE_SENSING, getMidiEventMap(midiInputDevice, cable));
     }
 
     @Override
     public void onMidiReset(MidiInputDevice midiInputDevice, int cable) {
-        sendEvent(MidiModule.RESET, getMidiEventMap(midiInputDevice, cable));
+        mEmitter.emit(MidiEvent.RESET, getMidiEventMap(midiInputDevice, cable));
     }
 }
