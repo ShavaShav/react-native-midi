@@ -8,6 +8,7 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.ArrayList;
@@ -122,17 +123,17 @@ public class MidiModule extends ReactContextBaseJavaModule implements LifecycleE
     }
 
     @ReactMethod
-    public void getDevices(Callback callback) {
-        callback.invoke(new ArrayList(mUsbDriver.getDevices().values()));
+    public void getDevices(Promise promise) {
+        promise.resolve(new ArrayList(mUsbDriver.getDevices().values()));
     }
 
     @ReactMethod
-    public void getDeviceCount(Callback callback) {
-        callback.invoke(mUsbDriver.getDevices().size());
+    public void getDeviceCount(Promise promise) {
+        promise.resolve(mUsbDriver.getDevices().size());
     }
 
     @ReactMethod
-    public void getDevice(int id, Callback callback) {
-        callback.invoke(mUsbDriver.getDevices().get(id));
+    public void getDevice(int id, Promise promise) {
+        promise.resolve(mUsbDriver.getDevices().get(id));
     }
 }
