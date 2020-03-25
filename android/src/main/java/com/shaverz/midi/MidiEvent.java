@@ -1,4 +1,4 @@
-package com.reactlibrary;
+package com.shaverz.midi;
 
 public enum MidiEvent {
     // Device Attach/Detach Events

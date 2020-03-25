@@ -1,4 +1,4 @@
-package com.reactlibrary;
+package com.shaverz.midi;
 
 public interface MidiEventEmitter {
     public void emit(MidiEvent event, Object options);

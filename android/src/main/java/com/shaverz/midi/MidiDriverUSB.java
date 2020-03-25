@@ -1,4 +1,4 @@
-package com.reactlibrary;
+package com.shaverz.midi;
 
 import android.hardware.usb.UsbDevice;
 import android.os.Build;

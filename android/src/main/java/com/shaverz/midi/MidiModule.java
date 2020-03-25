@@ -1,4 +1,4 @@
-package com.reactlibrary;
+package com.shaverz.midi;
 
 import android.os.Handler;
 import android.os.Looper;

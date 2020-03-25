@@ -1,8 +1,8 @@
 {
   "name": "react-native-midi",
   "title": "React Native Midi",
-  "version": "1.0.0",
-  "description": "TODO",
+  "version": "0.0.1",
+  "description": "A USB/Bluetooth midi driver for React Native",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -13,7 +13,10 @@
     "baseUrl": "https://github.com/github_account/react-native-midi"
   },
   "keywords": [
-    "react-native"
+    "react-native",
+    "keyboard",
+    "midi",
+    "usb"
   ],
   "author": {
     "name": "Zach Shaver",

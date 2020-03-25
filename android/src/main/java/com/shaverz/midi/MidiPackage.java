@@ -1,4 +1,4 @@
-package com.reactlibrary;
+package com.shaverz.midi;
 
 import java.util.Arrays;
 import java.util.Collections;
