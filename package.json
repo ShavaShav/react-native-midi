@@ -1,7 +1,7 @@
 {
   "name": "react-native-midi",
   "title": "React Native Midi",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A USB/Bluetooth midi driver for React Native",
   "main": "index.js",
   "scripts": {
@@ -9,8 +9,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/github_account/react-native-midi.git",
-    "baseUrl": "https://github.com/github_account/react-native-midi"
+    "url": "git+https://github.com/ShavaShav/react-native-midi.git",
+    "baseUrl": "https://github.com/ShavaShav/react-native-midi"
   },
   "keywords": [
     "react-native",

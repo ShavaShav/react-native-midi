@@ -4,7 +4,7 @@ React-native module for accessing USB and bluetooth midi controllers (on Android
 
 ## Getting started
 
-`$ npm install ShavaShav/react-native-midi --save`
+`$ npm install react-native-midi --save`
 
 Add USB feature in `android/src/main/AndroidManifest`:
 ```xml
