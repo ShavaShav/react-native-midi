@@ -4,10 +4,12 @@ const { Midi } = NativeModules;
 const eventEmitter = new NativeEventEmitter(Midi);
 
 export default {
+  ...Midi,
+  // override on/off event listener for easy hookup to NativeEventEmitter
   on: (event = '', callback = () => {}) => {
     Midi.on(event, err => {
       if (err)
-          throw new Exception(err);
+          throw new Error(err);
   
       eventEmitter.addListener(event, callback);
     });
@@ -15,12 +17,9 @@ export default {
   off: (event = '', callback = () => {}) => {
     Midi.off(event, err => {
       if (err)
-          throw new Exception(err);
+          throw new Error(err);
   
       eventEmitter.removeListener(event, callback);
     });
-  },
-  getDevices: Midi.getDevices,
-  getDeviceCount: Midi.getDeviceCount,
-  getDevice: Midi.getDevice
+  }
 }
