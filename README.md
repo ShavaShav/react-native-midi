@@ -1,5 +1,7 @@
 # react-native-midi
 
+[![NPM](https://nodei.co/npm/react-native-midi.png?compact=true)](https://nodei.co/npm/react-native-midi/)
+
 React-native module for accessing USB and bluetooth midi controllers (on Android)
 
 ## Getting started
