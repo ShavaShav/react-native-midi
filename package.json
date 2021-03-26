@@ -1,7 +1,7 @@
 {
   "name": "react-native-midi",
   "title": "React Native Midi",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A USB/Bluetooth midi driver for React Native",
   "main": "index.js",
   "scripts": {
